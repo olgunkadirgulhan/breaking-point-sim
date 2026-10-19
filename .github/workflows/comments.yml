@@ -1,0 +1,47 @@
+name: comments
+# Yeni videolara ilk yorum + yorumlara kişisel cevap (tools/auto_reply.py), saatte bir
+on:
+  schedule:
+    - cron: "13 */2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: comments
+  cancel-in-progress: false
+
+jobs:
+  reply:
+    if: vars.LIVE == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q google-api-python-client google-auth requests
+      - name: Breaking Point Sim
+        continue-on-error: true
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          CHANNEL_NAME: "Breaking Point Sim"
+          CHANNEL_ABOUT: "3D physics simulations rendered in Blender (rigid-body destruction: balls vs brick walls, wooden towers, crate pyramids). Every video is a computer simulation, not real footage; results are illustrative."
+          CHANNEL_KIND: general
+          CHANNEL_LANG: en
+          STATE_FILE: comment_replies.json
+          REQUESTS_FILE: viewer_requests.json
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIRST_QUESTIONS: '["What should we smash next? 👇", "Bigger ball or bigger wall next time? 🤔", "Which material should the next ball be? 🔩", "Did you expect it to survive? 😮", "Steel, gold or copper: which ball hits hardest? ⚙️", "Should we try it at full speed next? ⚡", "Rate the destruction from 1 to 10 👇", "How many bricks should the next wall have? 🧱", "Tower, wall or pyramid: your favorite? 🏗️", "What would you drop on it? 👇"]'
+        run: python tools/auto_reply.py
+      - run: |
+          git config user.name "comment-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add comment_replies*.json viewer_requests*.json 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "comments: $(date -u +%F-%H%M)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done
