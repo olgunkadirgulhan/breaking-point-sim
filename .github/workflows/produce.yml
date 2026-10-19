@@ -1,0 +1,68 @@
+name: produce
+# Breaking Point Sim: 1 simülasyon → Kaggle GPU'da Blender render → ses + yazı → YouTube Short.
+on:
+  workflow_dispatch:
+    inputs:
+      auto:
+        description: Harici zamanlayıcı (cron-job.org) - planlı çalışma
+        type: boolean
+        default: false
+      dry_run:
+        description: Render only, no upload
+        type: boolean
+        default: true
+permissions:
+  contents: write
+concurrency:
+  group: produce
+  cancel-in-progress: false
+jobs:
+  make:
+    if: ${{ !inputs.auto || vars.LIVE == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: pip install -q kaggle numpy Pillow google-api-python-client google-auth
+      - name: Günde 1 (planlı çalışma)
+        id: guard
+        if: ${{ inputs.auto }}
+        run: |
+          if python -c "import json,datetime,sys;h=json.load(open('records/history.json'));sys.exit(0 if any(x['date']==datetime.datetime.utcnow().strftime('%Y-%m-%d') for x in h) else 1)"; then echo skip=1 >> "$GITHUB_OUTPUT"; echo "bugün zaten yüklendi"; fi
+      - if: steps.guard.outputs.skip != '1'
+        run: python pick.py
+      - if: steps.guard.outputs.skip != '1'
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: python kaggle_run.py
+      - if: steps.guard.outputs.skip != '1'
+        run: python post.py
+      - if: steps.guard.outputs.skip != '1'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ] && [ "${{ inputs.auto }}" != "true" ]; then python upload.py --dry-run; else python upload.py; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bps-${{ github.run_id }}
+          path: |
+            output/final.mp4
+            output/meta_upload.json
+            output/sim_meta.json
+          retention-days: 7
+          if-no-files-found: ignore
+      - if: steps.guard.outputs.skip != '1' && (inputs.auto || !inputs.dry_run)
+        run: |
+          git config user.name "bps-bot"; git config user.email "bot@users.noreply.github.com"
+          git add records/history.json
+          git diff --cached --quiet && exit 0
+          git commit -m "upload: $(python -c "import json;print(json.load(open('output/meta_upload.json'))['title'])")"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done
