@@ -1,1 +1,23 @@
-[]
+[
+ {
+  "key": "tower-57-590-copper",
+  "kind": "tower",
+  "n": 57,
+  "title": "590 kg Copper Ball vs 57-Block Wooden Tower | Physics Simulation",
+  "video": "qiMjVFm-j-8",
+  "publish_at": "2026-10-19T22:00:00Z",
+  "date": "2026-10-19",
+  "params": {
+   "kind": "tower",
+   "seed": 307912,
+   "frames": 300,
+   "spp": 16,
+   "hit_frame": 26,
+   "ball_mat": "copper",
+   "layers": 19,
+   "ball_r": 0.25,
+   "hit_h": 0.23,
+   "ball_mass": 590
+  }
+ }
+]
