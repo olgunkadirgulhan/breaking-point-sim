@@ -11,6 +11,9 @@ on:
         description: Render only, no upload
         type: boolean
         default: true
+      reuse_run:
+        description: "Önceki bir çalışmanın hazır videosunu yükle (run id); boş = yeni render"
+        default: ""
 permissions:
   contents: write
 concurrency:
@@ -33,13 +36,20 @@ jobs:
         if: ${{ inputs.auto }}
         run: |
           if python -c "import json,datetime,sys;h=json.load(open('records/history.json'));sys.exit(0 if any(x['date']==datetime.datetime.utcnow().strftime('%Y-%m-%d') for x in h) else 1)"; then echo skip=1 >> "$GITHUB_OUTPUT"; echo "bugün zaten yüklendi"; fi
-      - if: steps.guard.outputs.skip != '1'
+      - if: inputs.reuse_run != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: bps-${{ inputs.reuse_run }}
+          path: output
+          run-id: ${{ inputs.reuse_run }}
+          github-token: ${{ github.token }}
+      - if: steps.guard.outputs.skip != '1' && inputs.reuse_run == ''
         run: python pick.py
-      - if: steps.guard.outputs.skip != '1'
+      - if: steps.guard.outputs.skip != '1' && inputs.reuse_run == ''
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: python kaggle_run.py
-      - if: steps.guard.outputs.skip != '1'
+      - if: steps.guard.outputs.skip != '1' && inputs.reuse_run == ''
         run: python post.py
       - if: steps.guard.outputs.skip != '1'
         env:
