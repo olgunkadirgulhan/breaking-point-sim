@@ -18,11 +18,18 @@ def yt():
     return build('youtube', 'v3', credentials=c, cache_discovery=False)
 
 
-def publish_at():
-    """ABD doğu yakası 18:00 (22:00 UTC); geçtiyse 30 dk sonra"""
-    now = datetime.now(timezone.utc); t = now.replace(hour=22, minute=0, second=0, microsecond=0)
-    if t < now + timedelta(minutes=20): t = now + timedelta(minutes=30)
-    return t.strftime('%Y-%m-%dT%H:%M:%SZ')
+SLOTS = (17, 23)   # UTC: ABD doğu 13:00 ve 19:00 (günde 2)
+
+
+def publish_at(hist):
+    """bugünün boş ABD saat dilimi; ikisi de geçtiyse/doluysa 30 dk sonra"""
+    now = datetime.now(timezone.utc); used = {h['publish_at'] for h in hist}
+    for day in (0, 1):
+        for h in SLOTS:
+            t = (now + timedelta(days=day)).replace(hour=h, minute=0, second=0, microsecond=0)
+            ts = t.strftime('%Y-%m-%dT%H:%M:%SZ')
+            if t >= now + timedelta(minutes=20) and ts not in used: return ts
+    return (now + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def main():
@@ -34,14 +41,14 @@ def main():
     from googleapiclient.http import MediaFileUpload
     api = yt(); ch = api.channels().list(part='snippet', mine=True).execute()['items'][0]
     if ch['id'] != os.environ.get('YT_CHANNEL_ID', ch['id']): sys.exit('yanlış kanal: ' + ch['snippet']['title'])
-    pa = publish_at()
+    pa = publish_at(hist)
     body = {'snippet': {'title': m['title'][:100], 'description': m['description'][:4900], 'tags': m['tags'], 'categoryId': '28',
                         'defaultLanguage': 'en', 'defaultAudioLanguage': 'en'},
             'status': {'privacyStatus': 'private', 'publishAt': pa, 'selfDeclaredMadeForKids': False,
                        'containsSyntheticMedia': True}}     # gerçekçi görünen sim → "değiştirilmiş/sentetik" etiketi
     vid = api.videos().insert(part='snippet,status', body=body, media_body=MediaFileUpload(str(OUT / 'final.mp4'), resumable=True)).execute()['id']
-    hist.append(dict(key=m['key'], kind=m['kind'], n=m['n'], title=m['title'], video=vid, publish_at=pa,
-                     date=datetime.now(timezone.utc).strftime('%Y-%m-%d'), params=m['params']))
+    hist.append(dict(key=m['key'], series=m.get('series'), kind=m['kind'], n=m['n'], title=m['title'], video=vid, publish_at=pa,
+                     date=datetime.now(timezone.utc).strftime('%Y-%m-%d'), labels=m.get('labels')))
     HIST.write_text(json.dumps(hist, indent=1))
     print(f"✓ https://youtube.com/shorts/{vid}  (yayın {pa})  {m['title']}")
 

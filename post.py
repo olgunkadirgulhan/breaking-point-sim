@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""output/raw.mp4 + sim_meta.json → output/final.mp4: üst yazı (ilk 3.5 sn), kalıcı 'SIMULATION' etiketi + ölçüm,
-çarpışma şiddetinden üretilen ses (fizik motorunun her karesindeki yavaşlamalardan)."""
+"""output/raw_{i}.mp4 + sim_meta_{i}.json (tur başına) → output/final.mp4: ilk 2.5 sn başlık, her turda büyük tur etiketi +
+ilerleme çubuğu, kalıcı '3D PHYSICS SIMULATION' etiketi; ses her turun çarpışma şiddetinden üretilir."""
 import json, subprocess, wave
 from pathlib import Path
 import numpy as np
@@ -25,22 +25,41 @@ def fit(d, s, size, maxw):
     return B.TITLE(size)
 
 
+def wrap(d, s, size, maxw):
+    """başlığı en fazla 3 satıra böl"""
+    words = s.split(); lines = ['']
+    for w in words:
+        t = (lines[-1] + ' ' + w).strip()
+        if d.textlength(t, font=B.TITLE(size)) <= maxw: lines[-1] = t
+        else: lines.append(w)
+    return lines
+
+
 def overlays(meta):
+    """ov_hook.png: videonun ilk 2.5 sn'si başlık; ov_r{i}.png: tur etiketi + kalıcı 'SIMULATION' etiketi"""
     hook = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(hook)
-    a, vs, b = meta['hook']
-    text_shadow(hook, (W // 2, 300), a, fit(d, a, 104, W - 120), B.WHITE + (255,))
-    text_shadow(hook, (W // 2, 402), vs, B.TITLE(70), B.HOT + (255,))
-    text_shadow(hook, (W // 2, 502), b, fit(d, b, 104, W - 120), B.WHITE + (255,))
-    hook.save(OUT / 'ov_hook.png')
-    tag = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(tag)
-    d.rounded_rectangle([40, 70, 400, 128], radius=8, fill=B.HOT + (235,))
+    size = 92; lines = wrap(d, meta['hook'].upper(), size, W - 120)
+    while len(lines) > 3: size -= 8; lines = wrap(d, meta['hook'].upper(), size, W - 120)
+    for i, l in enumerate(lines):
+        text_shadow(hook, (W // 2, 330 + i * (size + 12)), l, B.TITLE(size), B.WHITE + (255,))
+    d.rounded_rectangle([40, 70, 400, 128], radius=8, fill=B.HOT + (235,))   # sim etiketi başlıkta da görünsün
     d.text((220, 99), '3D PHYSICS SIMULATION', font=B.MONO(26, 700), fill=B.BG + (255,), anchor='mm')
-    p = meta['params']
-    line = f"BALL {p['ball_mass']:,} kg  ·  0.5x SLOW-MO"   # YouTube arayüzü alttaki ~%25'i kapatır → üstte
-    f = B.MONO(28, 600); w = d.textlength(line, font=f)
-    d.rounded_rectangle([40, 140, 40 + w + 32, 190], radius=8, fill=(17, 19, 22, 190))
-    d.text((56, 165), line, font=f, fill=B.WHITE + (255,), anchor='lm')
-    tag.save(OUT / 'ov_tag.png')
+    hook.save(OUT / 'ov_hook.png')
+    n = len(meta['labels'])
+    for i, lab in enumerate(meta['labels']):
+        img = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+        d.rounded_rectangle([40, 70, 400, 128], radius=8, fill=B.HOT + (235,))
+        d.text((220, 99), '3D PHYSICS SIMULATION', font=B.MONO(26, 700), fill=B.BG + (255,), anchor='mm')
+        f = B.MONO(28, 600); line = f'ROUND {i + 1}/{n}  ·  0.5x SLOW-MO'; w = d.textlength(line, font=f)
+        d.rounded_rectangle([40, 140, 40 + w + 32, 190], radius=8, fill=(17, 19, 22, 190))
+        d.text((56, 165), line, font=f, fill=B.WHITE + (255,), anchor='lm')
+        # tur etiketi: büyük, ilerleme çubuğu ile
+        text_shadow(img, (W // 2, 640), lab, fit(d, lab, 120, W - 140), B.WHITE + (255,))
+        bw = 560; x0 = W // 2 - bw // 2
+        for k in range(n):
+            seg = [x0 + k * bw // n + 6, 720, x0 + (k + 1) * bw // n - 6, 734]
+            d.rounded_rectangle(seg, radius=6, fill=(B.HOT + (255,)) if k <= i else (236, 238, 240, 90))
+        img.save(OUT / f'ov_r{i}.png')
 
 
 def audio(sim, dur):
@@ -74,21 +93,31 @@ def audio(sim, dur):
     put(w, max(0, hf - 0.9), 0.35)
     room = burst(40, 300, dur, 1e9) * 0.025          # oda uğultusu
     out += room
-    out = out / (np.abs(out).max() + 1e-9) * 0.89
-    with wave.open(str(OUT / 'sfx.wav'), 'wb') as f:
-        f.setnchannels(1); f.setsampwidth(2); f.setframerate(SR); f.writeframes((out * 32767).astype(np.int16).tobytes())
+    return out / (np.abs(out).max() + 1e-9) * 0.89
+
+
+def write_wav(path, x):
+    with wave.open(str(path), 'wb') as f:
+        f.setnchannels(1); f.setsampwidth(2); f.setframerate(SR); f.writeframes((np.clip(x, -1, 1) * 32767).astype(np.int16).tobytes())
 
 
 def main():
-    meta = json.loads((OUT / 'meta_upload.json').read_text()); sim = json.loads((OUT / 'sim_meta.json').read_text())
-    dur = sim['frames'] / sim['fps']
-    overlays(meta); audio(sim, dur)
-    subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(OUT / 'raw.mp4'), '-i', str(OUT / 'ov_hook.png'), '-i', str(OUT / 'ov_tag.png'),
-                    '-i', str(OUT / 'sfx.wav'), '-filter_complex',
-                    "[0][1]overlay=enable='lt(t,3.5)'[a];[a][2]overlay[v]", '-map', '[v]', '-map', '3:a',
+    meta = json.loads((OUT / 'meta_upload.json').read_text()); overlays(meta)
+    parts = []
+    for i in range(meta['n']):
+        sim = json.loads((OUT / f'sim_meta_{i}.json').read_text()); dur = sim['frames'] / sim['fps']
+        write_wav(OUT / f'sfx_{i}.wav', audio(sim, dur))
+        cmd = ['ffmpeg', '-y', '-v', 'error', '-i', str(OUT / f'raw_{i}.mp4'), '-i', str(OUT / f'ov_r{i}.png'), '-i', str(OUT / 'ov_hook.png'),
+               '-i', str(OUT / f'sfx_{i}.wav'), '-filter_complex',
+               (f"[0][2]overlay=enable='lt(t,2.5)'[h];[h][1]overlay=enable='gte(t,2.5)'[o]" if i == 0 else "[0][1]overlay[o]"),
+               '-map', '[o]', '-map', '3:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p',
+               '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-shortest', str(OUT / f'part_{i}.mp4')]
+        subprocess.run(cmd, check=True); parts.append(OUT / f'part_{i}.mp4')
+    (OUT / 'parts.txt').write_text(''.join(f"file '{p.name}'\n" for p in parts))
+    subprocess.run(['ffmpeg', '-y', '-v', 'error', '-f', 'concat', '-safe', '0', '-i', str(OUT / 'parts.txt'),
                     '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k',
-                    '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-shortest', str(OUT / 'final.mp4')], check=True)
-    print('✓ final.mp4', round(dur, 1), 's')
+                    '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', str(OUT / 'final.mp4')], check=True)
+    print('✓ final.mp4', meta['n'], 'tur')
 
 
 if __name__ == '__main__':

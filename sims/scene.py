@@ -20,14 +20,18 @@ for t in ('OPTIX', 'CUDA'):
         prefs.compute_device_type = t; prefs.get_devices()
         if any(d.type == t for d in prefs.devices): break
     except Exception: pass
-for d in prefs.devices: d.use = d.type != 'CPU'
+for d in prefs.devices: d.use = d.type == prefs.compute_device_type
 print('DEVICES', prefs.compute_device_type, [d.name for d in prefs.devices if d.use], flush=True)
 sc.cycles.device = 'GPU'; sc.cycles.samples = SPP; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.05
 sc.cycles.use_denoising = True
+try:   # OptiX kartında GPU gürültü giderici (CPU'daki OIDN 1080p'de kare başı saniyeler yiyor)
+    if prefs.compute_device_type == 'OPTIX': sc.cycles.denoiser = 'OPTIX'
+    else: sc.cycles.denoiser = 'OPENIMAGEDENOISE'; sc.cycles.denoising_use_gpu = True
+except Exception: pass
 sc.cycles.max_bounces = 4; sc.cycles.diffuse_bounces = 2; sc.cycles.glossy_bounces = 2; sc.cycles.transmission_bounces = 2
 sc.cycles.caustics_reflective = sc.cycles.caustics_refractive = False
 sc.render.use_persistent_data = True
-sc.render.resolution_x, sc.render.resolution_y = 1080, 1920; sc.render.fps = 30
+sc.render.resolution_x, sc.render.resolution_y = P.get('res', (1080, 1920)); sc.render.fps = 30
 sc.frame_start, sc.frame_end = 1, FR
 sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Medium High Contrast'; sc.view_settings.exposure = -0.4
 
@@ -70,7 +74,9 @@ def wood(name, col):
 
 
 BALLS = {'steel': ((0.62, 0.63, 0.66), 0.22, 1.0), 'gold': ((0.95, 0.68, 0.25), 0.18, 1.0),
-         'copper': ((0.86, 0.45, 0.3), 0.25, 1.0), 'black iron': ((0.06, 0.06, 0.07), 0.45, 1.0)}
+         'copper': ((0.86, 0.45, 0.3), 0.25, 1.0), 'black iron': ((0.06, 0.06, 0.07), 0.45, 1.0),
+         'wood': ((0.55, 0.36, 0.2), 0.65, 0.0), 'aluminium': ((0.8, 0.81, 0.83), 0.3, 1.0), 'lead': ((0.3, 0.31, 0.33), 0.55, 1.0),
+         'rubber': ((0.05, 0.05, 0.05), 0.8, 0.0)}
 
 # ---------- zemin, gökyüzü, ışık ----------
 bpy.ops.mesh.primitive_plane_add(size=200); fl = bpy.context.object
@@ -124,19 +130,34 @@ def projectile(radius, start, hit, hit_frame, mass, matname):
 
 
 bodies = []; meta = {'kind': P['kind'], 'seed': P['seed']}
-K = P['kind']; HF = P.get('hit_frame', 26)
+K = P['kind']; HF = P.get('hit_frame', 26); ball = None
+
+
+def appr(default):
+    """yaklaşma mesafesi: istenen çarpma hızı (m/s, simülasyon zamanında) × kinematik süre"""
+    v = P.get('speed', default); return v * HF * W.time_scale / sc.render.fps
 
 if K == 'wall':
     rows, cols = P['rows'], P['cols']; bw, bh, bd = 0.25, 0.075, 0.12
     bm = noisy('brick', P.get('brick_col', (0.33, 0.09, 0.05)), 0.9, scale=14, var=0.4, bump=0.4)
+    grid = {}
     for r in range(rows):
         off = bw / 2 if r % 2 else 0
         for c in range(cols):
             x = (c - cols / 2) * bw + off
             o = box((x, 0, bh / 2 + r * bh + 0.0005), (bw * 0.97, bd, bh * 0.95), bm, rng.uniform(-0.008, 0.008))
-            bodies.append(add_rb(o, 2.2 * (bw * bd * bh) / (0.25 * 0.12 * 0.075), 0.75))
-    top = rows * bh; R = P['ball_r']
-    ball = projectile(R, (0, -4.2, top * P.get('hit_h', 0.45)), (0, -bd / 2 - R + 0.05, top * P.get('hit_h', 0.45)), HF, P['ball_mass'], P['ball_mat'])
+            bodies.append(add_rb(o, 2.2 * (bw * bd * bh) / (0.25 * 0.12 * 0.075), 0.75)); grid[r, c] = (o, x)
+    if P.get('mortar'):   # harç: komşu tuğlalar arasında kırılabilir sabit bağ (eşik = dayanım)
+        thr = P['mortar'] * P.get('mortar_max', 60.0); ncon = 0
+        for (r, c), (o, x) in grid.items():
+            pairs = [grid.get((r, c + 1))] + [grid[r + 1, c2] for c2 in range(cols) if (r + 1, c2) in grid and abs(grid[r + 1, c2][1] - x) < bw * 0.99]
+            for q in filter(None, pairs):
+                bpy.ops.object.empty_add(location=(o.location + q[0].location) / 2); e = bpy.context.object
+                bpy.ops.rigidbody.constraint_add(); k = e.rigid_body_constraint
+                k.type = 'FIXED'; k.object1 = o; k.object2 = q[0]; k.use_breaking = True; k.breaking_threshold = thr; ncon += 1
+        meta['bonds'] = ncon
+    top = rows * bh; R = P['ball_r']; hh = top * P.get('hit_h', 0.45); d = appr(10)
+    ball = projectile(R, (0, -bd / 2 - R + 0.05 - d, hh), (0, -bd / 2 - R + 0.05, hh), HF, P['ball_mass'], P['ball_mat'])
     meta.update(count=rows * cols, label=f'{rows * cols} BRICKS', target_h=top)
 elif K == 'tower':
     layers = P['layers']; L, Wd, H = 0.6, 0.2, 0.12
@@ -147,7 +168,8 @@ elif K == 'tower':
             else: o = box((0, i * Wd, H / 2 + l * H), (L, Wd * 0.97, H * 0.97), wm, rng.uniform(-0.01, 0.01))
             bodies.append(add_rb(o, 0.45, 0.55))
     top = layers * H; R = P['ball_r']; hh = top * P.get('hit_h', 0.3)
-    ball = projectile(R, (-3.6, -1.6, hh), (-L / 2 - R + 0.05, -0.15, hh), HF, P['ball_mass'], P['ball_mat'])
+    d = appr(10); hit = Vector((-L / 2 - R + 0.05, -0.15, hh)); dv = Vector((-0.91, -0.41, 0))
+    ball = projectile(R, tuple(hit + dv * d), tuple(hit), HF, P['ball_mass'], P['ball_mat'])
     meta.update(count=layers * 3, label=f'{layers * 3}-BLOCK TOWER', target_h=top)
 elif K == 'pyramid':
     n = P['base']; s = 0.5
@@ -180,13 +202,34 @@ elif K == 'dominoes':
     R = 0.06
     ball = projectile(R, tuple(Vector((x0, y0, dh * 0.8)) + d0 * 3), tuple(Vector((x0, y0, dh * 0.8)) + d0 * (dd / 2 + R)), HF, 0.4, P['ball_mat'])
     meta.update(count=len(pts), label=f'{len(pts)} DOMINOES', target_h=dh)
+elif K == 'rain':   # N çelik bilye ahşap kulenin üstüne yağar
+    layers = P.get('layers', 16); L, Wd, H = 0.6, 0.2, 0.12
+    wm = wood('wood', P.get('wood_col', (0.62, 0.42, 0.24)))
+    for l in range(layers):
+        for i in (-1, 0, 1):
+            if l % 2: o = box((i * Wd, 0, H / 2 + l * H), (Wd * 0.97, L, H * 0.97), wm, rng.uniform(-0.01, 0.01))
+            else: o = box((0, i * Wd, H / 2 + l * H), (L, Wd * 0.97, H * 0.97), wm, rng.uniform(-0.01, 0.01))
+            bodies.append(add_rb(o, 0.45, 0.55))
+    top = layers * H; n = P['count']; R = P.get('bead_r', 0.05)
+    col, rough, metal = BALLS[P.get('ball_mat', 'steel')]
+    bm = noisy('bead', col, rough, scale=40, var=0.1, metal=metal, bump=0.03)
+    sp = 2.3 * R; side = max(1, math.ceil(math.sqrt(min(n, 64))))
+    for i in range(n):
+        lv, k = divmod(i, side * side)
+        x = (k % side - (side - 1) / 2) * sp + rng.uniform(-0.2, 0.2) * R
+        y = (k // side - (side - 1) / 2) * sp + rng.uniform(-0.2, 0.2) * R
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=R, location=(x, y, top + 1.2 + lv * sp), segments=20, ring_count=10)
+        b = bpy.context.object; bpy.ops.object.shade_smooth(); b.data.materials.append(bm)
+        bodies.append(add_rb(b, P.get('bead_mass', 4.0), 0.4, 0.3, 'SPHERE'))
+    meta.update(count=layers * 3, label=f'{n} STEEL BALLS', target_h=top + 0.6)
+    HF = int(math.sqrt(2 * 1.2 / 9.81) / W.time_scale * sc.render.fps)
 else:
     raise SystemExit('bilinmeyen tür ' + K)
 
 # ---------- kamera: yavaş yörünge, hedefe kilit ----------
 tgt_z = meta['target_h'] * 0.45
 bpy.ops.object.empty_add(location=(0, 0, tgt_z)); aim = bpy.context.object
-CAMD = {'wall': (4.6, 0.5, 24), 'tower': (4.2, 0.6, 24), 'pyramid': (8.5, 1.2, 26), 'dominoes': (6.5, 5.0, 24)}[K]
+CAMD = {'wall': (4.6, 0.5, 24), 'tower': (4.2, 0.6, 24), 'rain': (4.6, 1.0, 24), 'pyramid': (8.5, 1.2, 26), 'dominoes': (6.5, 5.0, 24)}[K]
 dist = P.get('cam_dist', CAMD[0]); az0 = math.radians(P.get('cam_az', rng.uniform(-75, -35))); el = P.get('cam_el', CAMD[1])
 bpy.ops.object.camera_add(); cam = bpy.context.object; sc.camera = cam; cam.data.lens = P.get('lens', CAMD[2])
 cam.data.dof.use_dof = True; cam.data.dof.focus_object = aim; cam.data.dof.aperture_fstop = 5.6
@@ -198,7 +241,7 @@ for f, daz, dd in ((1, 0, 1.0), (FR, math.radians(P.get('orbit', 35)), 0.88)):
 
 # ---------- bake + kare başı çarpışma şiddeti (ses için) ----------
 bpy.ops.ptcache.bake_all(bake=True)
-objs = bodies + [ball]; prev = None; pv = None; inten = []
+objs = bodies + ([ball] if ball else []); prev = None; pv = None; inten = []
 for f in range(1, FR + 1):
     sc.frame_set(f)
     pos = [o.matrix_world.translation.copy() for o in objs]
