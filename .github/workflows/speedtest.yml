@@ -1,0 +1,18 @@
+name: speedtest
+on: workflow_dispatch
+jobs:
+  t:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: nproc; free -g | head -2
+      - run: curl -sSfL -A "Mozilla/5.0" https://download.blender.org/release/Blender4.5/blender-4.5.14-linux-x64.tar.xz | tar -xJ -C /tmp
+      - run: |
+          B=$(ls -d /tmp/blender-*/blender)
+          base='{"kind":"wall","seed":3,"frames":60,"rows":14,"cols":12,"ball_r":0.45,"ball_mass":2950,"ball_mat":"steel","mortar":0.5,"mortar_max":4,"hit_frame":26,"fr_from":40,"fr_to":42'
+          for cfg in '"spp":16,"res":[1080,1920]' '"spp":12,"res":[720,1280]' '"spp":8,"res":[1080,1920]'; do
+            echo "$base,$cfg}" > p.json; t=$(date +%s)
+            $B -b --factory-startup -P sims/scene.py -- p.json /tmp/o > log.txt 2>&1 || tail -20 log.txt
+            echo "$cfg: $(( $(date +%s) - t )) s toplam (bake + 3 kare); kare: $(ls /tmp/o/f_*.jpg | wc -l)"; grep -E "DEVICES" log.txt; rm -rf /tmp/o
+          done

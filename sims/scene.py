@@ -21,8 +21,9 @@ for t in ('OPTIX', 'CUDA'):
         if any(d.type == t for d in prefs.devices): break
     except Exception: pass
 for d in prefs.devices: d.use = d.type == prefs.compute_device_type
-print('DEVICES', prefs.compute_device_type, [d.name for d in prefs.devices if d.use], flush=True)
-sc.cycles.device = 'GPU'; sc.cycles.samples = SPP; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.05
+gpu = [d.name for d in prefs.devices if d.use and d.type != 'CPU']
+print('DEVICES', prefs.compute_device_type if gpu else 'CPU', gpu, flush=True)
+sc.cycles.device = 'GPU' if gpu else 'CPU'; sc.cycles.samples = SPP; sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.05
 sc.cycles.use_denoising = True
 try:   # OptiX kartında GPU gürültü giderici (CPU'daki OIDN 1080p'de kare başı saniyeler yiyor)
     if prefs.compute_device_type == 'OPTIX': sc.cycles.denoiser = 'OPTIX'
@@ -268,4 +269,6 @@ if P.get('preview'):   # hızlı yerel kontrol: düşük çözünürlük, birka�
 else:
     if P.get('lowres'):   # yerel uçtan uca test
         sc.render.resolution_percentage = 34; sc.cycles.samples = 6; sc.cycles.device = 'CPU'
+    if P.get('fr_from'):  # paralel render: bu iş yalnızca kendi kare aralığını çizer (fizik yine baştan hesaplanır)
+        sc.frame_start, sc.frame_end = P['fr_from'], P['fr_to']
     bpy.ops.render.render(animation=True)
