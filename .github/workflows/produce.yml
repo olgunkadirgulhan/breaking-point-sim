@@ -1,5 +1,6 @@
 name: produce
-# Breaking Point Sim: 1 simülasyon → Kaggle GPU'da Blender render → ses + yazı → YouTube Short.
+# Breaking Point Sim: 1 seri (4-5 tur) → her tur ayrı işte Blender Cycles (CPU) ile paralel render → ses + yazı → YouTube Short.
+# 2026-10-20: Kaggle GPU bırakıldı (hesap askıya alındı); render GitHub'da, tur başına ~65 dk, paralel.
 on:
   workflow_dispatch:
     inputs:
@@ -11,49 +12,101 @@ on:
         description: Render only, no upload
         type: boolean
         default: true
-      reuse_run:
-        description: "Önceki bir çalışmanın hazır videosunu yükle (run id); boş = yeni render"
+      series:
+        description: "boş = sıradaki (mortar_wall, mass_wall, speed_tower, material_pyramid, rain_tower)"
         default: ""
 permissions:
   contents: write
 concurrency:
   group: produce
   cancel-in-progress: false
+env:
+  BLENDER_URL: https://download.blender.org/release/Blender4.5/blender-4.5.14-linux-x64.tar.xz
 jobs:
-  make:
+  plan:
     if: ${{ !inputs.auto || vars.LIVE == 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 330
+    timeout-minutes: 10
+    outputs:
+      skip: ${{ steps.guard.outputs.skip }}
+      rounds: ${{ steps.pick.outputs.rounds }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Günde 2 (planlı çalışma)
+        id: guard
+        if: ${{ inputs.auto }}
+        run: |
+          if python3 -c "import json,datetime,sys;h=json.load(open('records/history.json'));sys.exit(0 if sum(x['date']==datetime.datetime.utcnow().strftime('%Y-%m-%d') for x in h)>=2 else 1)"; then echo skip=1 >> "$GITHUB_OUTPUT"; echo "bugün 2 video yüklendi"; fi
+      - id: pick
+        if: steps.guard.outputs.skip != '1'
+        run: |
+          python3 pick.py ${{ inputs.series }}
+          echo "rounds=$(python3 -c "import json;print(json.dumps(list(range(len(json.load(open('output/rounds.json')))))))")" >> "$GITHUB_OUTPUT"
+      - if: steps.guard.outputs.skip != '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan
+          path: |
+            output/rounds.json
+            output/meta_upload.json
+
+  render:
+    needs: plan
+    if: needs.plan.outputs.skip != '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: true
+      matrix:
+        r: ${{ fromJSON(needs.plan.outputs.rounds) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: output
+      - uses: actions/cache@v4
+        id: bl
+        with:
+          path: /tmp/blender
+          key: blender-4.5.14
+      - if: steps.bl.outputs.cache-hit != 'true'
+        run: mkdir -p /tmp/blender && curl -sSfL -A "Mozilla/5.0" "$BLENDER_URL" | tar -xJ -C /tmp/blender --strip-components=1
+      - name: Tur ${{ matrix.r }}
+        run: |
+          python3 -c "import json;R=json.load(open('output/rounds.json'));json.dump(R[${{ matrix.r }}],open('/tmp/p.json','w'));print(R[${{ matrix.r }}]['label'])"
+          t=$(date +%s)
+          /tmp/blender/blender -b --factory-startup -P sims/scene.py -- /tmp/p.json /tmp/out > /tmp/log.txt 2>&1 || (tail -40 /tmp/log.txt; exit 1)
+          grep -E "DEVICES|META" /tmp/log.txt | cut -c1-200
+          n=$(ls /tmp/out/f_*.jpg | wc -l); echo "$n kare, $(( $(date +%s) - t )) s"
+          sudo apt-get install -y -qq --no-install-recommends ffmpeg >/dev/null
+          ffmpeg -y -v error -framerate 30 -i /tmp/out/f_%04d.jpg -c:v libx264 -preset slow -crf 14 -pix_fmt yuv420p output/raw_${{ matrix.r }}.mp4
+          cp /tmp/out/meta.json output/sim_meta_${{ matrix.r }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: round-${{ matrix.r }}
+          path: |
+            output/raw_${{ matrix.r }}.mp4
+            output/sim_meta_${{ matrix.r }}.json
+
+  publish:
+    needs: [plan, render]
+    if: needs.plan.outputs.skip != '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
-      - run: pip install -q kaggle numpy Pillow google-api-python-client google-auth
-      - name: Günde 2 (planlı çalışma)
-        id: guard
-        if: ${{ inputs.auto }}
-        run: |
-          if python -c "import json,datetime,sys;h=json.load(open('records/history.json'));sys.exit(0 if sum(x['date']==datetime.datetime.utcnow().strftime('%Y-%m-%d') for x in h)>=2 else 1)"; then echo skip=1 >> "$GITHUB_OUTPUT"; echo "bugün 2 video yüklendi"; fi
-      - if: inputs.reuse_run != ''
-        uses: actions/download-artifact@v4
+      - run: pip install -q numpy Pillow google-api-python-client google-auth
+      - uses: actions/download-artifact@v4
         with:
-          name: bps-${{ inputs.reuse_run }}
           path: output
-          run-id: ${{ inputs.reuse_run }}
-          github-token: ${{ github.token }}
-      - if: steps.guard.outputs.skip != '1' && inputs.reuse_run == ''
-        run: python pick.py
-      - if: steps.guard.outputs.skip != '1' && inputs.reuse_run == ''
-        env:
-          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
-          KAGGLE_USER: ${{ vars.KAGGLE_USER }}
-        run: python kaggle_run.py
-      - if: steps.guard.outputs.skip != '1' && inputs.reuse_run == ''
-        run: python post.py
-      - if: steps.guard.outputs.skip != '1'
-        env:
+          merge-multiple: true
+      - run: python post.py
+      - env:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
@@ -67,11 +120,9 @@ jobs:
           path: |
             output/final.mp4
             output/meta_upload.json
-            output/rounds.json
-            output/sim_meta_*.json
           retention-days: 7
           if-no-files-found: ignore
-      - if: steps.guard.outputs.skip != '1' && (inputs.auto || !inputs.dry_run)
+      - if: inputs.auto || !inputs.dry_run
         run: |
           git config user.name "bps-bot"; git config user.email "bot@users.noreply.github.com"
           git add records/history.json
