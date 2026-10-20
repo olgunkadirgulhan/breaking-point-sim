@@ -15,6 +15,9 @@ on:
       series:
         description: "boş = sıradaki (mortar_wall, mass_wall, speed_tower, material_pyramid, rain_tower)"
         default: ""
+      reuse_run:
+        description: "Önceki çalışmanın hazır videosunu yükle (run id); boş = yeni render"
+        default: ""
 permissions:
   contents: write
 concurrency:
@@ -23,8 +26,36 @@ concurrency:
 env:
   BLENDER_URL: https://download.blender.org/release/Blender4.5/blender-4.5.14-linux-x64.tar.xz
 jobs:
+  reuse:
+    if: inputs.reuse_run != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q google-api-python-client google-auth
+      - uses: actions/download-artifact@v4
+        with:
+          name: bps-${{ inputs.reuse_run }}
+          path: output
+          run-id: ${{ inputs.reuse_run }}
+          github-token: ${{ github.token }}
+      - env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID }}
+        run: python upload.py
+      - run: |
+          git config user.name "bps-bot"; git config user.email "bot@users.noreply.github.com"
+          git add records/history.json; git diff --cached --quiet && exit 0
+          git commit -m "upload (reuse ${{ inputs.reuse_run }})"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done
+
   plan:
-    if: ${{ !inputs.auto || vars.LIVE == 'true' }}
+    if: ${{ inputs.reuse_run == '' && (!inputs.auto || vars.LIVE == 'true') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
@@ -54,7 +85,7 @@ jobs:
     needs: plan
     if: needs.plan.outputs.skip != '1'
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    timeout-minutes: 300   # 2026-10-20 deneme: tur 68-140 dk (CPU)
     strategy:
       fail-fast: true
       matrix:
