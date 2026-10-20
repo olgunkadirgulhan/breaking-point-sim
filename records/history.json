@@ -36,5 +36,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "material_pyramid-55-0.71",
+  "series": "material_pyramid",
+  "kind": "pyramid",
+  "n": 5,
+  "title": "Same Size Ball, 5 Materials: Wood to Gold vs 55 Crates | Physics Simulation",
+  "video": "NmKAmf3r4ZE",
+  "publish_at": "2026-10-20T23:00:00Z",
+  "date": "2026-10-20",
+  "labels": [
+   "WOOD \u00b7 1,050 kg",
+   "ALUMINIUM \u00b7 4,050 kg",
+   "STEEL \u00b7 11,800 kg",
+   "LEAD \u00b7 17,000 kg",
+   "GOLD \u00b7 28,900 kg"
+  ]
  }
 ]
