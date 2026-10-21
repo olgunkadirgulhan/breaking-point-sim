@@ -53,5 +53,22 @@
    "LEAD \u00b7 17,000 kg",
    "GOLD \u00b7 28,900 kg"
   ]
+ },
+ {
+  "key": "mass_wall-195-steel-10",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Steel Ball vs 195-Brick Wall: 10 kg to 20,000 kg | Physics Simulation",
+  "video": "NNS1nZMp6c0",
+  "publish_at": "2026-10-21T17:00:00Z",
+  "date": "2026-10-21",
+  "labels": [
+   "10 kg",
+   "100 kg",
+   "1,000 kg",
+   "5,000 kg",
+   "20,000 kg"
+  ]
  }
 ]
