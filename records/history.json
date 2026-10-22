@@ -103,5 +103,22 @@
    "100 BALLS",
    "1,000 BALLS"
   ]
+ },
+ {
+  "key": "mass_wall-198-steel-10",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Steel Ball vs 198-Brick Wall: 10 kg to 20,000 kg | Physics Simulation",
+  "video": "k1ZLxVZFFjA",
+  "publish_at": "2026-10-22T23:00:00Z",
+  "date": "2026-10-22",
+  "labels": [
+   "10 kg",
+   "100 kg",
+   "1,000 kg",
+   "5,000 kg",
+   "20,000 kg"
+  ]
  }
 ]
