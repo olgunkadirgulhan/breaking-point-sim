@@ -170,5 +170,22 @@
    "LEAD \u00b7 19,200 kg",
    "GOLD \u00b7 32,800 kg"
   ]
+ },
+ {
+  "key": "speed_tower-60-lead-250",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "190 kg Lead Ball vs 60-Block Tower at 10 to 250 km/h | Physics Simulation",
+  "video": "f-kNszbYABU",
+  "publish_at": "2026-10-24T23:00:00Z",
+  "date": "2026-10-24",
+  "labels": [
+   "10 KM/H",
+   "30 KM/H",
+   "60 KM/H",
+   "120 KM/H",
+   "250 KM/H"
+  ]
  }
 ]
