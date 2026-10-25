@@ -86,6 +86,9 @@ KINDS = ['mortar_wall', 'mass_wall', 'speed_tower', 'material_pyramid', 'rain_to
 def main():
     hist = json.loads(HIST.read_text()) if HIST.exists() else []
     seen = {h['key'] for h in hist}; last = hist[-1].get('series') if hist else None
+    # 2026-10-25: aynı başlık iki kez yüklenmez (tekrar eden başlıkları YouTube dağıtmıyor)
+    tk = lambda t: ' '.join(''.join(c if c.isalnum() else ' ' for c in t.lower()).split())
+    seen_t = {tk(h.get('title', '')) for h in hist}
     rng = random.Random(f"{datetime.now(timezone.utc):%Y%m%d%H}-{len(hist)}")
     used = {k: sum(h.get('series') == k for h in hist) for k in KINDS}
     order = sorted([k for k in KINDS if k != last], key=lambda k: (used[k], rng.random()))
@@ -93,7 +96,7 @@ def main():
     for kind in order:
         for _ in range(100):
             base, rounds, title, what, key = series(kind, rng)
-            if key not in seen: break
+            if key not in seen and tk(title) not in seen_t: break
         else:
             continue
         break
