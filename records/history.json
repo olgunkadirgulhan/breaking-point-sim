@@ -203,5 +203,22 @@
    "100 BALLS",
    "1,000 BALLS"
   ]
+ },
+ {
+  "key": "speed_tower-51-steel-200",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "60 kg Steel Ball vs 51-Block Tower at 5 to 200 km/h | Physics Simulation",
+  "video": "1jt2Zy5nm3g",
+  "publish_at": "2026-10-25T23:00:00Z",
+  "date": "2026-10-25",
+  "labels": [
+   "5 KM/H",
+   "20 KM/H",
+   "50 KM/H",
+   "100 KM/H",
+   "200 KM/H"
+  ]
  }
 ]
