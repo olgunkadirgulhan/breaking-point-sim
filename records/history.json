@@ -220,5 +220,22 @@
    "100 KM/H",
    "200 KM/H"
   ]
+ },
+ {
+  "key": "mass_wall-165-copper-10",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Copper Ball vs 165-Brick Wall: 10 kg to 20,000 kg | Physics Simulation",
+  "video": "u8OpCTfTrtQ",
+  "publish_at": "2026-10-26T17:00:00Z",
+  "date": "2026-10-26",
+  "labels": [
+   "10 kg",
+   "100 kg",
+   "1,000 kg",
+   "5,000 kg",
+   "20,000 kg"
+  ]
  }
 ]
