@@ -271,5 +271,22 @@
    "LEAD \u00b7 19,200 kg",
    "GOLD \u00b7 32,800 kg"
   ]
+ },
+ {
+  "key": "mass_wall-156-black iron-20",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Black Iron Ball vs 156-Brick Wall: 20 kg to 30,000 kg | Physics Simulation",
+  "video": "ch5J6kGcq9A",
+  "publish_at": "2026-10-27T23:00:00Z",
+  "date": "2026-10-27",
+  "labels": [
+   "20 kg",
+   "200 kg",
+   "2,000 kg",
+   "8,000 kg",
+   "30,000 kg"
+  ]
  }
 ]
