@@ -288,5 +288,22 @@
    "8,000 kg",
    "30,000 kg"
   ]
+ },
+ {
+  "key": "mortar_wall-196-2500",
+  "series": "mortar_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "0% vs 100% Cement Strength: 196-Brick Wall vs 2,500 kg Steel Ball | Physics Simulation",
+  "video": "trSZJI1q6Do",
+  "publish_at": "2026-10-28T17:00:00Z",
+  "date": "2026-10-28",
+  "labels": [
+   "0% CEMENT",
+   "25% CEMENT",
+   "50% CEMENT",
+   "75% CEMENT",
+   "100% CEMENT"
+  ]
  }
 ]
