@@ -305,5 +305,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "speed_tower-54-lead-250",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "280 kg Lead Ball vs 54-Block Tower at 10 to 250 km/h | Physics Simulation",
+  "video": "XGu7fDKntxs",
+  "publish_at": "2026-10-28T23:00:00Z",
+  "date": "2026-10-28",
+  "labels": [
+   "10 KM/H",
+   "30 KM/H",
+   "60 KM/H",
+   "120 KM/H",
+   "250 KM/H"
+  ]
  }
 ]
