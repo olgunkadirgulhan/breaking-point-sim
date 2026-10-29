@@ -322,5 +322,21 @@
    "120 KM/H",
    "250 KM/H"
   ]
+ },
+ {
+  "key": "rain_tower-51",
+  "series": "rain_tower",
+  "kind": "rain",
+  "n": 4,
+  "title": "1 vs 10 vs 100 vs 1,000 Steel Balls on a 51-Block Tower | Physics Simulation",
+  "video": "t474mn_4NEI",
+  "publish_at": "2026-10-29T17:00:00Z",
+  "date": "2026-10-29",
+  "labels": [
+   "1 BALL",
+   "10 BALLS",
+   "100 BALLS",
+   "1,000 BALLS"
+  ]
  }
 ]
