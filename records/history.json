@@ -405,5 +405,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "mass_wall-170-copper-5",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Copper Ball vs 170-Brick Wall: 5 kg to 15,000 kg | Physics Simulation",
+  "video": "x6nn8Yicygs",
+  "publish_at": "2026-10-31T23:00:00Z",
+  "date": "2026-10-31",
+  "labels": [
+   "5 kg",
+   "50 kg",
+   "500 kg",
+   "3,000 kg",
+   "15,000 kg"
+  ]
  }
 ]
