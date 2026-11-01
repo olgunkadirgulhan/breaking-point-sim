@@ -422,5 +422,22 @@
    "3,000 kg",
    "15,000 kg"
   ]
+ },
+ {
+  "key": "speed_tower-60-lead-200",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "190 kg Lead Ball vs 60-Block Tower at 5 to 200 km/h | Physics Simulation",
+  "video": "DwQnabVfJuo",
+  "publish_at": "2026-11-01T17:00:00Z",
+  "date": "2026-11-01",
+  "labels": [
+   "5 KM/H",
+   "20 KM/H",
+   "50 KM/H",
+   "100 KM/H",
+   "200 KM/H"
+  ]
  }
 ]
