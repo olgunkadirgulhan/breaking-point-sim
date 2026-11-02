@@ -472,5 +472,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "mass_wall-198-steel-5",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Steel Ball vs 198-Brick Wall: 5 kg to 15,000 kg | Physics Simulation",
+  "video": "IsDG0dRLdvI",
+  "publish_at": "2026-11-02T23:00:00Z",
+  "date": "2026-11-02",
+  "labels": [
+   "5 kg",
+   "50 kg",
+   "500 kg",
+   "3,000 kg",
+   "15,000 kg"
+  ]
  }
 ]
