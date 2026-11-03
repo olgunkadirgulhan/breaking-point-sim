@@ -489,5 +489,22 @@
    "3,000 kg",
    "15,000 kg"
   ]
+ },
+ {
+  "key": "speed_tower-57-lead-300",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "230 kg Lead Ball vs 57-Block Tower at 15 to 300 km/h | Physics Simulation",
+  "video": "PbyV7FjwcSc",
+  "publish_at": "2026-11-03T17:00:00Z",
+  "date": "2026-11-03",
+  "labels": [
+   "15 KM/H",
+   "40 KM/H",
+   "80 KM/H",
+   "150 KM/H",
+   "300 KM/H"
+  ]
  }
 ]
