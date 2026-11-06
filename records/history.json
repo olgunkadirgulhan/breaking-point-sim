@@ -590,5 +590,22 @@
    "150 KM/H",
    "300 KM/H"
   ]
+ },
+ {
+  "key": "mass_wall-169-steel-5",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Steel Ball vs 169-Brick Wall: 5 kg to 15,000 kg | Physics Simulation",
+  "video": "sCsERA1RAM4",
+  "publish_at": "2026-11-06T17:00:00Z",
+  "date": "2026-11-06",
+  "labels": [
+   "5 kg",
+   "50 kg",
+   "500 kg",
+   "3,000 kg",
+   "15,000 kg"
+  ]
  }
 ]
