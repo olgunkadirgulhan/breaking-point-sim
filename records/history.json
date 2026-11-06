@@ -607,5 +607,22 @@
    "3,000 kg",
    "15,000 kg"
   ]
+ },
+ {
+  "key": "speed_tower-66-steel-200",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "160 kg Steel Ball vs 66-Block Tower at 5 to 200 km/h | Physics Simulation",
+  "video": "-sERX09BfAA",
+  "publish_at": "2026-11-06T23:00:00Z",
+  "date": "2026-11-06",
+  "labels": [
+   "5 KM/H",
+   "20 KM/H",
+   "50 KM/H",
+   "100 KM/H",
+   "200 KM/H"
+  ]
  }
 ]
