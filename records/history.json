@@ -692,5 +692,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "mass_wall-132-black iron-5",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Black Iron Ball vs 132-Brick Wall: 5 kg to 15,000 kg | Physics Simulation",
+  "video": "DX87bX-3ZTk",
+  "publish_at": "2026-11-09T17:00:00Z",
+  "date": "2026-11-09",
+  "labels": [
+   "5 kg",
+   "50 kg",
+   "500 kg",
+   "3,000 kg",
+   "15,000 kg"
+  ]
  }
 ]
