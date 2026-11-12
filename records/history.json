@@ -794,5 +794,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "mass_wall-196-black iron-20",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Black Iron Ball vs 196-Brick Wall: 20 kg to 30,000 kg | Physics Simulation",
+  "video": "M_aux-muK54",
+  "publish_at": "2026-11-12T17:00:00Z",
+  "date": "2026-11-12",
+  "labels": [
+   "20 kg",
+   "200 kg",
+   "2,000 kg",
+   "8,000 kg",
+   "30,000 kg"
+  ]
  }
 ]
