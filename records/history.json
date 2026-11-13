@@ -845,5 +845,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "speed_tower-60-steel-200",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "60 kg Steel Ball vs 60-Block Tower at 5 to 200 km/h | Physics Simulation",
+  "video": "IvWGbzdM3yo",
+  "publish_at": "2026-11-13T23:00:00Z",
+  "date": "2026-11-13",
+  "labels": [
+   "5 KM/H",
+   "20 KM/H",
+   "50 KM/H",
+   "100 KM/H",
+   "200 KM/H"
+  ]
  }
 ]
