@@ -60,6 +60,13 @@ def overlays(meta):
             seg = [x0 + k * bw // n + 6, 720, x0 + (k + 1) * bw // n - 6, 734]
             d.rounded_rectangle(seg, radius=6, fill=(B.HOT + (255,)) if k <= i else (236, 238, 240, 90))
         img.save(OUT / f'ov_r{i}.png')
+    # 2026-11-14: kanal ~58K izlenme / 22 abone → son turun son 2.5 sn'sinde abonelik daveti (merak zirvesinde)
+    cta = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(cta)
+    d.rounded_rectangle([90, 1180, W - 90, 1380], radius=28, fill=(17, 19, 22, 215))
+    text_shadow(cta, (W // 2, 1245), 'NEXT TEST IS BIGGER', fit(d, 'NEXT TEST IS BIGGER', 76, W - 240), B.WHITE + (255,), r=6)
+    f = B.MONO(40, 700); s2 = 'SUBSCRIBE · NEW SIM DAILY'
+    text_shadow(cta, (W // 2, 1330), s2, f, B.HOT + (255,), r=4)
+    cta.save(OUT / 'ov_cta.png')
 
 
 def audio(sim, dur):
@@ -108,8 +115,9 @@ def main():
         sim = json.loads((OUT / f'sim_meta_{i}.json').read_text()); dur = sim['frames'] / sim['fps']
         write_wav(OUT / f'sfx_{i}.wav', audio(sim, dur))
         cmd = ['ffmpeg', '-y', '-v', 'error', '-i', str(OUT / f'raw_{i}.mp4'), '-i', str(OUT / f'ov_r{i}.png'), '-i', str(OUT / 'ov_hook.png'),
-               '-i', str(OUT / f'sfx_{i}.wav'), '-filter_complex',
-               (f"[0][2]overlay=enable='lt(t,2.5)'[h];[h][1]overlay=enable='gte(t,2.5)'[o]" if i == 0 else "[0][1]overlay[o]"),
+               '-i', str(OUT / f'sfx_{i}.wav'), '-i', str(OUT / 'ov_cta.png'), '-filter_complex',
+               (f"[0][2]overlay=enable='lt(t,2.5)'[h];[h][1]overlay=enable='gte(t,2.5)'[o]" if i == 0 else
+                f"[0][1]overlay[b];[b][4]overlay=enable='gte(t,{max(0.0, dur - 2.5):.2f})'[o]" if i == meta['n'] - 1 else "[0][1]overlay[o]"),
                '-map', '[o]', '-map', '3:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p',
                '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-shortest', str(OUT / f'part_{i}.mp4')]
         subprocess.run(cmd, check=True); parts.append(OUT / f'part_{i}.mp4')
