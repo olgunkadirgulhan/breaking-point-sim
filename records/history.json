@@ -964,5 +964,22 @@
    "120 KM/H",
    "250 KM/H"
   ]
+ },
+ {
+  "key": "mass_wall-144-copper-5",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Copper Ball vs 144-Brick Wall: 5 kg to 15,000 kg | Physics Simulation",
+  "video": "KeG7kdgm9Vk",
+  "publish_at": "2026-11-17T17:00:00Z",
+  "date": "2026-11-17",
+  "labels": [
+   "5 kg",
+   "50 kg",
+   "500 kg",
+   "3,000 kg",
+   "15,000 kg"
+  ]
  }
 ]
