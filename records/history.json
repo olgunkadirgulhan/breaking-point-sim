@@ -1015,5 +1015,22 @@
    "120 KM/H",
    "250 KM/H"
   ]
+ },
+ {
+  "key": "mass_wall-204-black iron-10",
+  "series": "mass_wall",
+  "kind": "wall",
+  "n": 5,
+  "title": "Black Iron Ball vs 204-Brick Wall: 10 kg to 20,000 kg | Physics Simulation",
+  "video": "6xEatjMt1vc",
+  "publish_at": "2026-11-18T23:00:00Z",
+  "date": "2026-11-18",
+  "labels": [
+   "10 kg",
+   "100 kg",
+   "1,000 kg",
+   "5,000 kg",
+   "20,000 kg"
+  ]
  }
 ]
