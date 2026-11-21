@@ -1117,5 +1117,22 @@
    "75% CEMENT",
    "100% CEMENT"
   ]
+ },
+ {
+  "key": "speed_tower-60-copper-300",
+  "series": "speed_tower",
+  "kind": "tower",
+  "n": 5,
+  "title": "220 kg Copper Ball vs 60-Block Tower at 15 to 300 km/h | Physics Simulation",
+  "video": "wnghFXm43Ok",
+  "publish_at": "2026-11-21T23:00:00Z",
+  "date": "2026-11-21",
+  "labels": [
+   "15 KM/H",
+   "40 KM/H",
+   "80 KM/H",
+   "150 KM/H",
+   "300 KM/H"
+  ]
  }
 ]
