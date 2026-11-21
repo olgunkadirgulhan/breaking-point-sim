@@ -1,4 +1,5 @@
 name: produce
+# 2026-11-21: OFF while vars.MODE == 'momdad' (channel now runs momdad.yml). Old sims kept for reference.
 # Breaking Point Sim: 1 seri (4-5 tur) → her tur ayrı işte Blender Cycles (CPU) ile paralel render → ses + yazı → YouTube Short.
 # 2026-10-20: Kaggle GPU bırakıldı (hesap askıya alındı); render GitHub'da, tur başına ~65 dk, paralel.
 on:
@@ -27,7 +28,7 @@ env:
   BLENDER_URL: https://download.blender.org/release/Blender4.5/blender-4.5.14-linux-x64.tar.xz
 jobs:
   reuse:
-    if: inputs.reuse_run != ''
+    if: inputs.reuse_run != '' && vars.MODE != 'momdad'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -55,7 +56,7 @@ jobs:
           for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done
 
   plan:
-    if: ${{ inputs.reuse_run == '' && (!inputs.auto || vars.LIVE == 'true') }}
+    if: ${{ inputs.reuse_run == '' && (!inputs.auto || vars.LIVE == 'true') && vars.MODE != 'momdad' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:

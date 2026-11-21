@@ -1,0 +1,52 @@
+name: momdad
+# 2026-11-21: channel switched from physics sims to "Mom vs Dad" 2D comedy (momdad/). 2 Shorts/day, 18:00 + 21:00 UTC.
+# Runs a few times a day; momdad/run.py --auto only renders when a slot in the next 10 h is still empty.
+on:
+  schedule:
+    - cron: "7 8,12,16 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Render only, no upload
+        type: boolean
+        default: false
+permissions:
+  contents: write
+concurrency:
+  group: momdad
+  cancel-in-progress: false
+jobs:
+  make:
+    if: vars.MODE == 'momdad'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q numpy pillow imageio-ffmpeg google-api-python-client google-auth
+      - name: Render + upload
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then python momdad/run.py --dry-run
+          elif [ "${{ github.event_name }}" = "schedule" ]; then python momdad/run.py --auto
+          else python momdad/run.py; fi
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: momdad-${{ github.run_id }}
+          path: output/final.mp4
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Save history
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add records/momdad_history.json 2>/dev/null || exit 0
+          git diff --cached --quiet && exit 0
+          git commit -m "momdad: $(date -u +%F-%H%M)" && (git push || (git pull --rebase && git push))

@@ -9,9 +9,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -q Pillow google-api-python-client google-auth
+      - run: pip install -q Pillow numpy imageio-ffmpeg google-api-python-client google-auth
       - env:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python brand.py --apply
+        run: if [ "${{ vars.MODE }}" = "momdad" ]; then python momdad/brand_md.py --apply; else python brand.py --apply; fi
