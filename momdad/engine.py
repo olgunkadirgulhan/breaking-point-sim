@@ -580,7 +580,8 @@ def parent_part(d, fam, who, spec, tt, gt, kid_o):
         hx, hy = info['hands'][0]
         if act == 'gift':
             if tt < 1.3: prop(d, pr, hx, hy - 10, 1.1, gt=gt)
-            else: prop(d, pr, lerp(hx, KX + 70, sm(seg(tt, 1.3, 1.7))), lerp(hy, GY - 300, sm(seg(tt, 1.3, 1.7))), 1.1, gt=gt)
+            elif tt < 1.7: prop(d, pr, lerp(hx, KX + 60, sm(seg(tt, 1.3, 1.7))), lerp(hy, GY - 330, sm(seg(tt, 1.3, 1.7))), 1.1, gt=gt)
+            # after 1.7 s the kid holds it: drawn in frame() on top of the kid
         elif act == 'phone': prop(d, 'phone', info['hands'][1][0], info['hands'][1][1] - 20, 1.0)
         elif act == 'film':
             prop(d, 'phone', info['hands'][0][0], info['hands'][0][1] - 10, 1.1)
@@ -653,6 +654,8 @@ def frame(t):
     if phase != 'kid':
         pinfo = parent_part(d, fam, phase, sit[phase], pt, gt, ko)
     kinfo = person(d, fam['kid'], KX, GY, ko)
+    if phase != 'kid' and sit[phase][0] == 'gift' and sit[phase][3] and pt >= 1.7:
+        prop(d, sit[phase][3], KX + 60, GY - 330 - ko.get('bob', 0), 1.1, gt=gt)
     draw_fx(d, kfx, kinfo, gt)
     # bubbles
     if phase == 'kid':
